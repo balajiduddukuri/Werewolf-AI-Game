@@ -6,18 +6,28 @@ import { playRawAudio } from '../services/audioService';
 
 interface GameLogProps {
   logs: LogEntry[];
+  /** If true, the game automatically reads out new 'narrative' logs */
   autoNarrate: boolean;
+  /** Callback to toggle the autoNarrate preference */
   onToggleAutoNarrate: () => void;
 }
 
+/**
+ * Renders the persistent game log (chat, narrative, actions).
+ * Handles auto-scrolling to the latest entry and managing Audio playback.
+ */
 const GameLog: React.FC<GameLogProps> = ({ logs, autoNarrate, onToggleAutoNarrate }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
 
+  // Auto-scroll to bottom when logs update
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
+  /**
+   * Triggers manually playing a log entry via TTS.
+   */
   const handlePlayAudio = async (text: string, id: string) => {
     if (playingId) return;
     setPlayingId(id);

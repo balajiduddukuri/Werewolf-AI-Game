@@ -1,3 +1,15 @@
+/**
+ * Main Application Logic
+ * 
+ * Orchestrates the Game Loop:
+ * 1. Setup Phase: Role selection and initialization.
+ * 2. Night Intro: Atmosphere generation, moon phase cycling, cooldown reduction.
+ * 3. Night Action: User and Bots select targets (Roles) or cast spells (Runes).
+ * 4. Day Intro: Resolution of night actions (Kill/Save/Reveal) and narrative generation.
+ * 5. Day Discussion: Bots generate conversation based on game history.
+ * 6. Day Voting: Elimination logic and Win Condition check.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Moon, Sun, RefreshCw, Loader2, Hexagon, BookOpen, X, Shield, Eye, Users, MousePointer2, Volume2, Trophy, Skull } from 'lucide-react';
@@ -45,6 +57,7 @@ function App() {
   };
 
   // --- Auto-Narrate Logic ---
+  // Watches for new 'narrative' logs and triggers TTS if enabled.
   useEffect(() => {
     if (!autoNarrate) return;
 
@@ -195,6 +208,11 @@ function App() {
     }
   };
 
+  /**
+   * Resolves the Night Phase.
+   * Aggregates Bot actions (via Gemini) and User actions.
+   * Processes rune effects (Shields/Sight) and role abilities (Kill/Heal).
+   */
   const confirmNightAction = async () => {
     if (!selectedActionTarget && userPlayer?.isAlive) return;
 
@@ -219,7 +237,7 @@ function App() {
       const rune = runePlayer?.runes.find(r => r.id === ra.runeId);
       if (rune && rune.type === RuneType.SHIELD) saves.push(ra.targetId);
       if (rune && rune.type === RuneType.SIGHT) {
-          // Bots learn info silently
+          // Bots learn info silently (internal to AI, simplified for now)
       }
     });
 
@@ -274,6 +292,7 @@ function App() {
     });
 
     // Store pending results for Day Intro processing
+    // Note: If multiple kills happen, we currently simplify to one major event per night for narrative clarity
     const primaryWWTarget = kills.length > 0 ? kills[0] : null; 
     const primaryDocTarget = saves.includes(primaryWWTarget || '') ? primaryWWTarget : null;
 
@@ -294,6 +313,10 @@ function App() {
     setIsLoading(false);
   };
 
+  /**
+   * Applies the results of the night (Death/Save).
+   * Generates the day's opening narrative.
+   */
   const processNightResults = async () => {
     setIsLoading(true);
     const { werewolf: killedId, doctor: savedId } = state.targets;
@@ -332,13 +355,17 @@ function App() {
 
   // --- Day Logic ---
 
+  /**
+   * Simulates the town hall discussion.
+   * Bots generate chat messages based on previous logs and their hidden roles.
+   */
   const runDayDiscussion = async () => {
     setIsLoading(true);
     // Generate Bot Chats
     const logsText = state.logs.map(l => `${l.source || 'System'}: ${l.text}`);
     const botMoves = await generateBotDayActions(state.players, state.dayCount, logsText);
 
-    // Apply chats progressively
+    // Apply chats progressively to simulate real-time typing
     for (const move of botMoves) {
       const player = state.players.find(p => p.id === move.playerId);
       if (player && player.isAlive) {
@@ -356,10 +383,15 @@ function App() {
     setSelectedActionTarget(targetId);
   };
 
+  /**
+   * Tallies votes and eliminates the player with the most votes.
+   * Handles ties (no death).
+   */
   const confirmVote = async () => {
     if (!selectedActionTarget && userPlayer?.isAlive) return;
     setIsLoading(true);
 
+    // AI logic to determine who bots vote for
     const botActions = await generateBotDayActions(state.players, state.dayCount, state.logs.slice(-5).map(l => l.text));
     
     const voteCounts: Record<string, number> = {};
@@ -375,6 +407,7 @@ function App() {
       addLog(`You voted for ${state.players.find(p => p.id === selectedActionTarget)?.name}`, 'action', 'You');
     }
 
+    // Determine result
     let eliminatedId: string | null = null;
     let maxVotes = 0;
     Object.entries(voteCounts).forEach(([id, count]) => {
@@ -392,7 +425,7 @@ function App() {
     }));
 
     setState(prev => ({ ...prev, players: nextPlayers }));
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 2000)); // Suspense delay
 
     if (eliminatedId) {
       const eliminated = nextPlayers.find(p => p.id === eliminatedId);

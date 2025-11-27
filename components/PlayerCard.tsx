@@ -5,13 +5,23 @@ import { Shield, Eye, Skull, User, Hexagon, Lock, Hourglass } from 'lucide-react
 interface PlayerCardProps {
   player: Player;
   userRole: Role;
+  /** Callback when the user clicks the action button on this player */
   onAction: (playerId: string) => void;
+  /** Text to display on the button (e.g., "Vote", "Kill", "Save") */
   actionLabel?: string;
+  /** Whether the action button is currently disabled (e.g., cooldown or invalid target) */
   isActionDisabled?: boolean;
+  /** If true, reveals the player's role (e.g., if User is Seer or Game Over) */
   isRevealed?: boolean; 
+  /** Highlights the card visually as the currently selected target */
   isSelected?: boolean;
 }
 
+/**
+ * Renders a single player card.
+ * Displays Avatar, Name, Status (Alive/Dead), Role (if revealed), and equipped Runes.
+ * Handles visual states for selection and death.
+ */
 const PlayerCard: React.FC<PlayerCardProps> = ({
   player,
   userRole,
@@ -24,6 +34,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   const isUser = !player.isBot;
   
   // Determine if we show the role card
+  // Show if: It's the user, the player is dead, the player is revealed (Seer), or both are Werewolves
   const showRole = isUser || !player.isAlive || isRevealed || (userRole === Role.WEREWOLF && player.role === Role.WEREWOLF);
 
   const getRoleIcon = (role: Role) => {
@@ -35,6 +46,10 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
     }
   };
 
+  /**
+   * Generates tailwind classes and icons for Rune indicators.
+   * Handles "Ready" vs "Cooldown" states.
+   */
   const getRuneVisuals = (rune: Rune) => {
     const isReady = rune.currentCooldown === 0;
     

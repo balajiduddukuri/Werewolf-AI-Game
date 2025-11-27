@@ -13,6 +13,12 @@ const formatPlayersForPrompt = (players: Player[]) => {
 
 /**
  * Generates flavor text for the narrator.
+ * Uses a faster model for low-latency UI updates.
+ * 
+ * @param phase Current game phase
+ * @param dayCount Current day number
+ * @param recentEvents Summary of what just happened (e.g., "Bob died")
+ * @param moonPhase Current atmospheric phase
  */
 export const generateNarratorText = async (
   phase: Phase,
@@ -48,6 +54,8 @@ export const generateNarratorText = async (
 /**
  * Generates speech audio from text using Gemini TTS.
  * Returns the Base64 encoded audio string (Raw PCM).
+ * 
+ * Note: Uses 'gemini-2.5-flash-preview-tts' with specific Voice Config.
  */
 export const generateSpeech = async (text: string): Promise<string | null> => {
   try {
@@ -73,6 +81,9 @@ export const generateSpeech = async (text: string): Promise<string | null> => {
 
 /**
  * Simulates bot decisions during the DAY (Chat + Voting).
+ * Uses a smarter model to analyze history and generate convincing dialogue.
+ * 
+ * @param logs The chat history to maintain context
  */
 export const generateBotDayActions = async (
   players: Player[],
@@ -138,6 +149,9 @@ export const generateBotDayActions = async (
 
 /**
  * Simulates bot decisions during the NIGHT (Killing, Saving, Checking, RUNES).
+ * Handles the logic for standard roles AND the usage of Runes.
+ * 
+ * @param players Current state of all players including cooldowns
  */
 export const generateBotNightActions = async (
   players: Player[],
