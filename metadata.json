@@ -1,0 +1,5 @@
+{
+  "name": "Werewolf: AI Game",
+  "description": "An immersive single-player social deduction game where you play against AI bots powered by Gemini. Survive the night, find the werewolves, or deceive the village.",
+  "requestFramePermissions": []
+}
